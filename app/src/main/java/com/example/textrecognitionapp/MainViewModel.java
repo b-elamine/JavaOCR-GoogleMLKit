@@ -1,6 +1,5 @@
 package com.example.textrecognitionapp;
 
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.widget.Toast;
@@ -14,7 +13,10 @@ import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainViewModel extends ViewModel {
 
@@ -37,14 +39,28 @@ public class MainViewModel extends ViewModel {
             return;
         }
 
-        StringBuilder text = new StringBuilder();
+        List<Map<String, Object>> elements = new ArrayList<>();
         for (Text.TextBlock block : blocks) {
             for (Text.Line line : block.getLines()) {
                 for (Text.Element element : line.getElements()) {
-                    text.append(element.getText()).append(" ");
+                    Map<String, Object> elementData = new HashMap<>();
+                    elementData.put("text", element.getText());
+                    elementData.put("left", element.getBoundingBox().left);
+                    elementData.put("top", element.getBoundingBox().top);
+                    elementData.put("width", element.getBoundingBox().width());
+                    elementData.put("height", element.getBoundingBox().height());
+                    elements.add(elementData);
                 }
             }
         }
-        textView.setText(text.toString());
+
+        List<Map<String, Object>> processedData = PostProcessor.processElements(elements);
+
+        StringBuilder resultText = new StringBuilder();
+        for (Map<String, Object> label : processedData) {
+            resultText.append(label.get("text")).append(" ");
+        }
+
+        textView.setText(resultText.toString().trim());
     }
 }

@@ -27,8 +27,6 @@ import com.example.textrecognitionapp.databinding.ActivityMainBinding;
 import java.io.IOException;
 import java.io.InputStream;
 
-
-
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
@@ -160,4 +158,3 @@ public class MainActivity extends AppCompatActivity {
     private static final int CAMERA_PERMISSION_CODE = 0;
     private static final int GALLERY_PERMISSION_CODE = 1;
 }
-
