@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class PostProcessor {
 
-    private static final String[] FUEL_TYPES = {"SP95E10", "SP98", "E85", "GAZOLE", "GPL"};
+    private static final String[] FUEL_TYPES = {"SP95E10", "SP98", "SP95", "E85", "GAZOLE", "GPL", "Splomb98", "Splomb95"};
 
     public static List<Map<String, Object>> combineSplitWords(List<Map<String, Object>> elements) {
         List<Map<String, Object>> combinedData = new ArrayList<>();

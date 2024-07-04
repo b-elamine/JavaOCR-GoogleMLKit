@@ -54,10 +54,12 @@ public class MainViewModel extends ViewModel {
             }
         }
 
+        // Applying post-processing for specific fuel price detection task to g
+
         List<Map<String, Object>> processedData = PostProcessor.processElements(elements);
 
         StringBuilder resultText = new StringBuilder();
-        for (Map<String, Object> label : processedData) {
+        for (Map<String, Object> label : processedData) {    // Change "processedData" by "elements" to get RAW results
             resultText.append(label.get("text")).append(" ");
         }
 
