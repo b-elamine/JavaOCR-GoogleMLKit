@@ -61,6 +61,11 @@ public class MainViewModel extends ViewModel {
         StringBuilder resultText = new StringBuilder();
         for (Map<String, Object> label : processedData) {    // Change "processedData" by "elements" to get RAW results
             resultText.append(label.get("text")).append(" ");
+            System.out.println("Bbx Text :"+label.get("text"));
+            System.out.println("Bbx LEFT : "+label.get("left"));
+            System.out.println("Bbx RIGHT : "+label.get("right"));
+            System.out.println("Bbx WIDTH : "+label.get("width"));
+            System.out.println("Bbx HEIGHT : "+label.get("height"));
         }
 
         textView.setText(resultText.toString().trim());
