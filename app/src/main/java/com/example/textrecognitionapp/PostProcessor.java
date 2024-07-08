@@ -17,8 +17,10 @@ public class PostProcessor {
             StringBuilder combinedText = new StringBuilder((String) elements.get(i).get("text"));
             int left = (int) elements.get(i).get("left");
             int top = (int) elements.get(i).get("top");
-            int right = left + (int) elements.get(i).get("width");
-            int bottom = top + (int) elements.get(i).get("height");
+            int right = (int) elements.get(i).get("right");
+            int bottom = (int) elements.get(i).get("bottom");
+            int width = (int) elements.get(i).get("width");
+            int height = (int) elements.get(i).get("height");
 
             int j = i + 1;
             while (j < n && (int) elements.get(j).get("top") == top) {
@@ -31,7 +33,11 @@ public class PostProcessor {
             Map<String, Object> combinedElement = new HashMap<>();
             combinedElement.put("text", combinedText.toString().toUpperCase());
             combinedElement.put("left", left);
+            combinedElement.put("right", right);
             combinedElement.put("top", top);
+            combinedElement.put("bottom", bottom);
+            combinedElement.put("centerX", left + width / 2.0f);
+            combinedElement.put("centerY", top + height / 2.0f);
             combinedElement.put("width", right - left);
             combinedElement.put("height", bottom - top);
             combinedData.add(combinedElement);

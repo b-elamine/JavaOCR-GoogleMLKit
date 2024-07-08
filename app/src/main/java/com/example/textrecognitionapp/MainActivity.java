@@ -52,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
         binding.buttonGallery.setOnClickListener(view -> controlGalleryPermission());
         binding.buttonDetect.setOnClickListener(view -> {
             if (detectImage != null) {
-                Toast.makeText(this, "Re Recognition Image!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Re Recognition Image!",
+                        Toast.LENGTH_SHORT).show();
                 setRecognitionTextFromBitmap(detectImage);
             }
         });

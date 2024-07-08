@@ -2,6 +2,7 @@ package com.example.textrecognitionapp;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.AppCompatTextView;
@@ -45,8 +46,12 @@ public class MainViewModel extends ViewModel {
                 for (Text.Element element : line.getElements()) {
                     Map<String, Object> elementData = new HashMap<>();
                     elementData.put("text", element.getText());
+                    elementData.put("right", element.getBoundingBox().right);
                     elementData.put("left", element.getBoundingBox().left);
                     elementData.put("top", element.getBoundingBox().top);
+                    elementData.put("bottom", element.getBoundingBox().bottom);
+                    elementData.put("centerX", element.getBoundingBox().exactCenterX());
+                    elementData.put("centerY", element.getBoundingBox().exactCenterY());
                     elementData.put("width", element.getBoundingBox().width());
                     elementData.put("height", element.getBoundingBox().height());
                     elements.add(elementData);
@@ -54,19 +59,31 @@ public class MainViewModel extends ViewModel {
             }
         }
 
+        for (Map<String, Object> element : elements) {
+            Log.d("TextRecognition", "Element data: " + element.toString());
+        }
+
         // Applying post-processing for specific fuel price detection task to g
 
         List<Map<String, Object>> processedData = PostProcessor.processElements(elements);
 
+        for (Map<String, Object> element : processedData) {
+            Log.d("TextRecognition", "Processed Element data: " + element.toString());
+        }
+
         StringBuilder resultText = new StringBuilder();
         for (Map<String, Object> label : processedData) {    // Change "processedData" by "elements" to get RAW results
-            resultText.append(label.get("text")).append(" ");
-            System.out.println("Bbx Text :"+label.get("text"));
+            resultText.append(label.get("bounding_box").toString()).append("\n");
+            /*System.out.println("Bbx Text :"+label.get("text"));
             System.out.println("Bbx LEFT : "+label.get("left"));
-            System.out.println("Bbx RIGHT : "+label.get("right"));
-            System.out.println("Bbx WIDTH : "+label.get("width"));
-            System.out.println("Bbx HEIGHT : "+label.get("height"));
+            System.out.println("Bbx RIGHT : "+label.get("right").toString());
+            System.out.println("Bbx WIDTH : "+label.get("width").toString());
+            System.out.println("Bbx HEIGHT : "+label.get("height").toString());*/
         }
+        resultText.append("\n\nleft : The X coordinate of the left side of the rectangle\n" +
+                          "top : The Y coordinate of the top of the rectangle\n" +
+                          "right : The X coordinate of the right side of the rectangle\n" +
+                          "bottom : The Y coordinate of the bottom of the rectangle");
 
         textView.setText(resultText.toString().trim());
     }
