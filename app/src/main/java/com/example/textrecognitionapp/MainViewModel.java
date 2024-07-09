@@ -100,7 +100,7 @@ public class MainViewModel extends ViewModel {
                 }
 
                 // Here we are implementing labels-prices mapping algorithm
-                if (priceBox.left > labelBox.right && Math.abs(priceBox.top - labelBox.top) < 50) {
+                if (priceBox.left > labelBox.right && Math.abs(priceBox.centerY() - labelBox.centerY()) < labelBox.height()) {
                     Map<String, String> matchedPair = new HashMap<>();
                     matchedPair.put("label", labelText);
                     matchedPair.put("price", priceText);

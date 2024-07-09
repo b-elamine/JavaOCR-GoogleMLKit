@@ -108,14 +108,16 @@ public class MainActivity extends AppCompatActivity {
 
     private final ActivityResultLauncher<Intent> galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
-                Uri uri = result.getData().getData();
-                if (result.getResultCode() == RESULT_OK && uri != null) {
-                    detectImageUri = uri;
-                    try (InputStream inputStream = getContentResolver().openInputStream(detectImageUri)) {
-                        detectImage = BitmapFactory.decodeStream(inputStream);
-                        setRecognitionTextFromBitmap(detectImage);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                if (result.getData()!=null){
+                    Uri uri = result.getData().getData();
+                    if (result.getResultCode() == RESULT_OK && uri != null) {
+                        detectImageUri = uri;
+                        try (InputStream inputStream = getContentResolver().openInputStream(detectImageUri)) {
+                            detectImage = BitmapFactory.decodeStream(inputStream);
+                            setRecognitionTextFromBitmap(detectImage);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
