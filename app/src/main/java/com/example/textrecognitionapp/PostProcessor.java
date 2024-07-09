@@ -71,4 +71,15 @@ public class PostProcessor {
         List<Map<String, Object>> combinedData = combineSplitWords(elements);
         return filterAndExtractLabels(combinedData);
     }
+
+    public static List<Map<String, Object>> processPrice(List<Map<String, Object>> elements) {
+        List<Map<String, Object>> prices = new ArrayList<>();
+        for (Map<String, Object> element : elements) {
+            String text = (String) element.get("text");
+            if (text.matches("\\d{4}") || text.matches("\\d+\\.\\d+")) {
+                prices.add(element);
+            }
+        }
+        return prices ;
+    }
 }

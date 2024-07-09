@@ -1,7 +1,10 @@
 package com.example.textrecognitionapp;
 
+import static com.example.textrecognitionapp.PostProcessor.processPrice;
+
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -35,7 +38,7 @@ public class MainViewModel extends ViewModel {
     private void processText(Context context, AppCompatTextView textView, Text visionText) {
         List<Text.TextBlock> blocks = visionText.getTextBlocks();
 
-        if (blocks.size() == 0) {
+        if (blocks.isEmpty()) {
             Toast.makeText(context, "No Text Detected in Image!", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -45,18 +48,21 @@ public class MainViewModel extends ViewModel {
         for (Text.TextBlock block : blocks) {
             for (Text.Line line : block.getLines()) {
                 for (Text.Element element : line.getElements()) {
-                    Map<String, Object> elementData = new HashMap<>();
-                    elementData.put("text", element.getText());
-                    elementData.put("right", element.getBoundingBox().right);
-                    elementData.put("left", element.getBoundingBox().left);
-                    elementData.put("top", element.getBoundingBox().top);
-                    elementData.put("bottom", element.getBoundingBox().bottom);
-                    elementData.put("centerX", element.getBoundingBox().exactCenterX());
-                    elementData.put("centerY", element.getBoundingBox().exactCenterY());
-                    elementData.put("width", element.getBoundingBox().width());
-                    elementData.put("height", element.getBoundingBox().height());
-                    elementData.put("conf", element.getConfidence());
-                    elements.add(elementData);
+                    Rect boundingBox = element.getBoundingBox();
+                    if (boundingBox != null) {
+                        Map<String, Object> elementData = new HashMap<>();
+                        elementData.put("text", element.getText());
+                        elementData.put("right", boundingBox.right);
+                        elementData.put("left", boundingBox.left);
+                        elementData.put("top", boundingBox.top);
+                        elementData.put("bottom", boundingBox.bottom);
+                        elementData.put("centerX", boundingBox.exactCenterX());
+                        elementData.put("centerY", boundingBox.exactCenterY());
+                        elementData.put("width", boundingBox.width());
+                        elementData.put("height", boundingBox.height());
+                        elementData.put("conf", element.getConfidence());
+                        elements.add(elementData);
+                    }
                 }
             }
         }
@@ -65,31 +71,62 @@ public class MainViewModel extends ViewModel {
             Log.d("TextRecognition", "Element data: " + element.toString());
         }
 
-        // Applying post-processing for specific fuel price detection task to g
+        // Applying post-processing for specific fuel price detection task
+        List<Map<String, Object>> processedLabels = PostProcessor.processElements(elements);
+        List<Map<String, Object>> processedPrices = PostProcessor.processPrice(elements);
 
-        List<Map<String, Object>> processedData = PostProcessor.processElements(elements);
+        System.out.println("Res.Labels : " + processedLabels);
+        System.out.println("Res.Prices : " + processedPrices);
 
-        for (Map<String, Object> element : processedData) {
-            Log.d("TextRecognition", "Processed Element data: " + element.toString());
-        }
+
+        List<Map<String, String>> matchedLabelsAndPrices = new ArrayList<>();
 
         StringBuilder resultText = new StringBuilder();
-        for (Map<String, Object> label : processedData) {    // Change "processedData" by "elements" to get RAW results
-            resultText.append(label.get("bounding_box").toString()).append("\n");
 
-            /*System.out.println("Bbx Text :"+label.get("text"));
-            System.out.println("Bbx LEFT : "+label.get("left"));
-            System.out.println("Bbx RIGHT : "+label.get("right").toString());
-            System.out.println("Bbx WIDTH : "+label.get("width").toString());
-            System.out.println("Bbx HEIGHT : "+label.get("height").toString());*/
+        for (Map<String, Object> processedLabel : processedLabels) { // Change "processedLabels" to "elements" for raw results
+
+            Map<String, Object> label = (Map<String, Object>) processedLabel.get("bounding_box");
+            Rect labelBox = createBoundingBox(label);
+            String labelText = (String) label.get("text");
+            if (labelBox != null) {
+                System.out.println("Results || Text : " + labelText + " - Rectangle : " + labelBox.toString());
+            }
+
+            for (Map<String, Object> price : processedPrices) {
+                Rect priceBox = createBoundingBox(price);
+                String priceText = (String) price.get("text");
+                if (priceBox != null) {
+                    System.out.println("Results || Text : " + priceText + " - Rectangle : " + priceBox.toString());
+                }
+
+                if (priceBox.left > labelBox.right && Math.abs(priceBox.top - labelBox.top) < 50) {
+                    Map<String, String> matchedPair = new HashMap<>();
+                    matchedPair.put("label", labelText);
+                    matchedPair.put("price", priceText);
+                    matchedLabelsAndPrices.add(matchedPair);
+                    break;
+                }
+            }
         }
 
-        // Explanation
-        resultText.append("\n\nleft : The X coordinate of the left side of the rectangle\n" +
-                          "top : The Y coordinate of the top of the rectangle\n" +
-                          "right : The X coordinate of the right side of the rectangle\n" +
-                          "bottom : The Y coordinate of the bottom of the rectangle");
+        for (Map<String, String> pair : matchedLabelsAndPrices) {
+            resultText.append("Label: ").append(pair.get("label")).append(", Price: ").append(pair.get("price")).append("\n");
+        }
 
         textView.setText(resultText.toString().trim());
+    }
+
+    private Rect createBoundingBox(Map<String, Object> boundingBoxData) {
+        try {
+            return new Rect(
+                    (int) boundingBoxData.get("left"),
+                    (int) boundingBoxData.get("top"),
+                    (int) boundingBoxData.get("right"),
+                    (int) boundingBoxData.get("bottom")
+            );
+        } catch (Exception e) {
+            Log.e("TextRecognition", "Error creating bounding box: " + e.toString());
+            return null;
+        }
     }
 }
