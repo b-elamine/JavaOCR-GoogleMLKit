@@ -99,6 +99,7 @@ public class MainViewModel extends ViewModel {
                     System.out.println("Results || Text : " + priceText + " - Rectangle : " + priceBox.toString());
                 }
 
+                // Here we are implementing labels-prices mapping algorithm
                 if (priceBox.left > labelBox.right && Math.abs(priceBox.top - labelBox.top) < 50) {
                     Map<String, String> matchedPair = new HashMap<>();
                     matchedPair.put("label", labelText);
