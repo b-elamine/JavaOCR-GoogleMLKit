@@ -41,6 +41,7 @@ public class MainViewModel extends ViewModel {
         }
 
         List<Map<String, Object>> elements = new ArrayList<>();
+
         for (Text.TextBlock block : blocks) {
             for (Text.Line line : block.getLines()) {
                 for (Text.Element element : line.getElements()) {
@@ -54,6 +55,7 @@ public class MainViewModel extends ViewModel {
                     elementData.put("centerY", element.getBoundingBox().exactCenterY());
                     elementData.put("width", element.getBoundingBox().width());
                     elementData.put("height", element.getBoundingBox().height());
+                    elementData.put("conf", element.getConfidence());
                     elements.add(elementData);
                 }
             }
@@ -74,12 +76,15 @@ public class MainViewModel extends ViewModel {
         StringBuilder resultText = new StringBuilder();
         for (Map<String, Object> label : processedData) {    // Change "processedData" by "elements" to get RAW results
             resultText.append(label.get("bounding_box").toString()).append("\n");
+
             /*System.out.println("Bbx Text :"+label.get("text"));
             System.out.println("Bbx LEFT : "+label.get("left"));
             System.out.println("Bbx RIGHT : "+label.get("right").toString());
             System.out.println("Bbx WIDTH : "+label.get("width").toString());
             System.out.println("Bbx HEIGHT : "+label.get("height").toString());*/
         }
+
+        // Explanation
         resultText.append("\n\nleft : The X coordinate of the left side of the rectangle\n" +
                           "top : The Y coordinate of the top of the rectangle\n" +
                           "right : The X coordinate of the right side of the rectangle\n" +

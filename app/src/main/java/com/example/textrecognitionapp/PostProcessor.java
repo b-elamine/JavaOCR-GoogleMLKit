@@ -21,12 +21,14 @@ public class PostProcessor {
             int bottom = (int) elements.get(i).get("bottom");
             int width = (int) elements.get(i).get("width");
             int height = (int) elements.get(i).get("height");
+            float conf = (float) elements.get(i).get("conf");
 
             int j = i + 1;
             while (j < n && (int) elements.get(j).get("top") == top) {
                 combinedText.append(elements.get(j).get("text"));
                 right = (int) elements.get(j).get("left") + (int) elements.get(j).get("width");
                 bottom = Math.max(bottom, (int) elements.get(j).get("top") + (int) elements.get(j).get("height"));
+                conf = (float) ((float) elements.get(j).get("conf") + (float) elements.get(i).get("conf"))/2;
                 j++;
             }
 
@@ -40,6 +42,7 @@ public class PostProcessor {
             combinedElement.put("centerY", top + height / 2.0f);
             combinedElement.put("width", right - left);
             combinedElement.put("height", bottom - top);
+            combinedElement.put("conf", conf);
             combinedData.add(combinedElement);
 
             i = j;
