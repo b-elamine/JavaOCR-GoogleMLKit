@@ -1,4 +1,4 @@
-# Text Recognition Android Application (Customized USECASE : FUEL PRICES IN FRANCE)
+# Text Recognition Android App (Customized usecase : FUEL PRICES IN FRANCE)
 
 This Android application utilizes Google's ML Kit for text recognition from images. It allows users to capture images from the camera or select images from the gallery, perform text recognition on them, and display the recognized text.
 
