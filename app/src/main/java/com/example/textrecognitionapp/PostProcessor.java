@@ -125,7 +125,11 @@ public class PostProcessor {
                 corrected = corrected.replaceAll("\\D", "");
                 if (corrected.length() == 4) {
                     corrected = corrected.replaceAll("(\\d)(\\d{3})", "$1.$2");
+                } else {
+                    corrected = String.format("%04d", Integer.parseInt(corrected));
+                    //corrected = corrected.replaceAll("(\\d)(\\d{3})", "$1.$2");
                 }
+
                 pricesData.put("text", corrected);
                 pricesData.put("bounding_box", element);
                 prices.add(pricesData);

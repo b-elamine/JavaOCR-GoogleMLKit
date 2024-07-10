@@ -84,7 +84,7 @@ public class MainViewModel extends ViewModel {
         StringBuilder resultText = new StringBuilder();
 
         for (Map<String, Object> processedLabel : processedLabels) { // Change "processedLabels" to "elements" for raw results
-
+            System.out.println("LABELS : "+ processedLabel.get("text"));
            /*
 
            ProcessedLabels Data format :
@@ -142,8 +142,7 @@ public class MainViewModel extends ViewModel {
         }
 
         for (Map<String, String> pair : matchedLabelsAndPrices) {
-            resultText.append("Label : ").append(pair.get("label")).append(", Price : ").append(pair.get("price")).append("\n");
-            System.out.println("Label : " + pair.get("label") + "Processed Price : " + pair.get("price"));
+            resultText.append(pair.get("label")).append(" : ").append(pair.get("price")).append("€").append("\n");
         }
 
         textView.setText(resultText.toString().trim());
