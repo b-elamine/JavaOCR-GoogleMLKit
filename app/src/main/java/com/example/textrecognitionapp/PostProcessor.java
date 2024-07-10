@@ -121,8 +121,10 @@ public class PostProcessor {
                 for (String[] replacement : replacements) {
                     corrected = corrected.replaceAll(replacement[0], replacement[1]);
                 }
-                if (corrected.matches("\\d{4}")) {
-                    corrected = corrected.substring(0, 1) + "." + corrected.substring(1);
+
+                corrected = corrected.replaceAll("\\D", "");
+                if (corrected.length() == 4) {
+                    corrected = corrected.replaceAll("(\\d)(\\d{3})", "$1.$2");
                 }
                 pricesData.put("text", corrected);
                 pricesData.put("bounding_box", element);
