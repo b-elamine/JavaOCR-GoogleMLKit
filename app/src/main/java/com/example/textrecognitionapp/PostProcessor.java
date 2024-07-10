@@ -7,7 +7,21 @@ import java.util.Map;
 
 public class PostProcessor {
 
-    private static final String[] FUEL_TYPES = {"SP95E10", "SP98", "SP95", "E85", "E10", "GAZOLE", "GPL", "Splomb98", "Splomb95"};
+    private static final String[] FUEL_TYPES = {
+            "SP95E10",
+            "SP98",
+            "SP95",
+            "E85",
+            "E10",
+            "GAZOLE",
+            "GPL",
+            "GPLC",
+            "Splomb98",
+            "Splomb95",
+            "SUPERETHANOL",
+            "SUPER",
+            "ETHANOL"
+    };
 
     public static List<Map<String, Object>> combineSplitWords(List<Map<String, Object>> elements) {
         List<Map<String, Object>> combinedData = new ArrayList<>();
@@ -28,7 +42,7 @@ public class PostProcessor {
                 combinedText.append(elements.get(j).get("text"));
                 right = (int) elements.get(j).get("left") + (int) elements.get(j).get("width");
                 bottom = Math.max(bottom, (int) elements.get(j).get("top") + (int) elements.get(j).get("height"));
-                conf = (float) ((float) elements.get(j).get("conf") + (float) elements.get(i).get("conf"))/2;
+                conf = (float) ((float) elements.get(j).get("conf") + (float) elements.get(i).get("conf")) / 2;
                 j++;
             }
 
@@ -56,11 +70,18 @@ public class PostProcessor {
         for (Map<String, Object> item : combinedData) {
             String text = ((String) item.get("text")).replace(" ", "").toUpperCase();
             for (String fuelType : FUEL_TYPES) {
-                if (text.contains(fuelType)) {
+                if (text.equals(fuelType) || text.contains(fuelType)) {
                     Map<String, Object> labelData = new HashMap<>();
-                    labelData.put("text", fuelType);
-                    labelData.put("bounding_box", item);
-                    extractedLabels.add(labelData);
+                    if (text.equals(fuelType)) {
+                        labelData.put("text", fuelType);
+                        labelData.put("bounding_box", item);
+                        extractedLabels.add(labelData);
+                    } else {
+                        labelData.put("text", fuelType);
+                        labelData.put("pPrice0", text.substring(0, (text.indexOf(fuelType))));
+                        labelData.put("pPrice1", text.substring((text.indexOf(fuelType)) + (fuelType.length()), text.length()));
+                        System.out.println("Potential Prices : " + labelData.get("pPrice0") + " | " + labelData.get("pPrice1") + " " + "For " + fuelType);
+                    }
                 }
             }
         }
@@ -73,13 +94,58 @@ public class PostProcessor {
     }
 
     public static List<Map<String, Object>> processPrice(List<Map<String, Object>> elements) {
+        // Define a regex pattern to match common OCR mistakes
+        String[][] replacements = {
+                {"I", "1"},
+                {"S", "5"},
+                {"O", "0"},
+                {"B", "8"},
+                {"G", "6"},
+                {"Z", "2"},
+                {"Q", "0"},
+                {"D", "0"},
+                {"L", "1"},
+                {"C", "0"},
+                {"N", "7"}
+        };
+
         List<Map<String, Object>> prices = new ArrayList<>();
+
         for (Map<String, Object> element : elements) {
             String text = (String) element.get("text");
-            if (text.matches("\\d{4}") || text.matches("\\d+\\.\\d+")) {
-                prices.add(element);
+            if (isLikelyPrice(text, 0.5)) {
+                System.out.println("Results : True");
+                String corrected = text;
+                Map<String, Object> pricesData = new HashMap<>();
+                // Loop through the replacements and apply them
+                for (String[] replacement : replacements) {
+                    corrected = corrected.replaceAll(replacement[0], replacement[1]);
+                }
+                if (corrected.matches("\\d{4}")) {
+                    corrected = corrected.substring(0, 1) + "." + corrected.substring(1);
+                }
+                pricesData.put("text", corrected);
+                pricesData.put("bounding_box", element);
+                prices.add(pricesData);
             }
         }
-        return prices ;
+        return prices;
     }
+
+    // True or false the detected word is price
+    public static boolean isLikelyPrice(String input, double threshold) {
+        int digitCount = 0;
+        int length = input.length();
+
+        for (char c : input.toCharArray()) {
+            if (Character.isDigit(c)) {
+                digitCount++;
+            }
+        }
+
+        // Check if the ratio of digits to total length meets the threshold
+        return ((double) digitCount / length) >= threshold;
+    }
+
+
 }

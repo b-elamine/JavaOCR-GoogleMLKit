@@ -85,33 +85,65 @@ public class MainViewModel extends ViewModel {
 
         for (Map<String, Object> processedLabel : processedLabels) { // Change "processedLabels" to "elements" for raw results
 
+           /*
+
+           ProcessedLabels Data format :
+            {
+                "text" : text // Combined and preprocessed text
+                "bounding_box" :
+                {
+                    "text" : text,    // combined and preprocessed text
+                    ...other bounding box info
+                }
+            }
+
+            */
+
             Map<String, Object> label = (Map<String, Object>) processedLabel.get("bounding_box");
             Rect labelBox = createBoundingBox(label);
             String labelText = (String) label.get("text");
-            if (labelBox != null) {
-                System.out.println("Results || Text : " + labelText + " - Rectangle : " + labelBox.toString());
+
+            for (Map<String, Object> processedPrice : processedPrices) {
+
+                /*
+
+           ProcessedPrices Data format :
+            {
+                "text" : text // preprocessed price
+                "bounding_box" :
+                {
+                    "text" : text,    // Raw detected price
+                    ...other bounding box info
+                }
             }
 
-            for (Map<String, Object> price : processedPrices) {
+            */
+
+                Map<String, Object> price = (Map<String, Object>) processedPrice.get("bounding_box");
+                System.out.println("LOL" + price);
                 Rect priceBox = createBoundingBox(price);
-                String priceText = (String) price.get("text");
-                if (priceBox != null) {
-                    System.out.println("Results || Text : " + priceText + " - Rectangle : " + priceBox.toString());
-                }
+                String priceText = (String) processedPrice.get("text");
 
                 // Here we are implementing labels-prices mapping algorithm
-                if (priceBox.left > labelBox.right && Math.abs(priceBox.centerY() - labelBox.centerY()) < labelBox.height()) {
+                if ((   priceBox.left > labelBox.right &&
+                        Math.abs(priceBox.centerY() - labelBox.centerY()) < labelBox.height())
+                        ||
+                        (priceBox.right < labelBox.left &&
+                                Math.abs(priceBox.centerY() - labelBox.centerY()) < labelBox.height())
+                        ) {
                     Map<String, String> matchedPair = new HashMap<>();
                     matchedPair.put("label", labelText);
                     matchedPair.put("price", priceText);
                     matchedLabelsAndPrices.add(matchedPair);
+                    System.out.println("PRICES | Original Price : " + price.get("text") + ", " + "Processed Price : " + processedPrice.get("text"));
                     break;
                 }
             }
         }
 
         for (Map<String, String> pair : matchedLabelsAndPrices) {
-            resultText.append("Label: ").append(pair.get("label")).append(", Price: ").append(pair.get("price")).append("\n");
+            resultText.append("Label : ").append(pair.get("label")).append(", Price : ").append(pair.get("price")).append("\n");
+            System.out.println("Label : " + pair.get("label") + "Processed Price : " + pair.get("price"));
         }
 
         textView.setText(resultText.toString().trim());
