@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.lifecycle.ViewModel;
 
@@ -43,29 +44,7 @@ public class MainViewModel extends ViewModel {
             return;
         }
 
-        List<Map<String, Object>> elements = new ArrayList<>();
-
-        for (Text.TextBlock block : blocks) {
-            for (Text.Line line : block.getLines()) {
-                for (Text.Element element : line.getElements()) {
-                    Rect boundingBox = element.getBoundingBox();
-                    if (boundingBox != null) {
-                        Map<String, Object> elementData = new HashMap<>();
-                        elementData.put("text", element.getText());
-                        elementData.put("right", boundingBox.right);
-                        elementData.put("left", boundingBox.left);
-                        elementData.put("top", boundingBox.top);
-                        elementData.put("bottom", boundingBox.bottom);
-                        elementData.put("centerX", boundingBox.exactCenterX());
-                        elementData.put("centerY", boundingBox.exactCenterY());
-                        elementData.put("width", boundingBox.width());
-                        elementData.put("height", boundingBox.height());
-                        elementData.put("conf", element.getConfidence());
-                        elements.add(elementData);
-                    }
-                }
-            }
-        }
+        List<Map<String, Object>> elements = getMaps(blocks);
 
         for (Map<String, Object> element : elements) {
             Log.d("TextRecognition", "Element data: " + element.toString());
@@ -146,6 +125,34 @@ public class MainViewModel extends ViewModel {
         }
 
         textView.setText(resultText.toString().trim());
+    }
+
+    @NonNull
+    private static List<Map<String, Object>> getMaps(List<Text.TextBlock> blocks) {
+        List<Map<String, Object>> elements = new ArrayList<>();
+
+        for (Text.TextBlock block : blocks) {
+            for (Text.Line line : block.getLines()) {
+                for (Text.Element element : line.getElements()) {
+                    Rect boundingBox = element.getBoundingBox();
+                    if (boundingBox != null) {
+                        Map<String, Object> elementData = new HashMap<>();
+                        elementData.put("text", element.getText());
+                        elementData.put("right", boundingBox.right);
+                        elementData.put("left", boundingBox.left);
+                        elementData.put("top", boundingBox.top);
+                        elementData.put("bottom", boundingBox.bottom);
+                        elementData.put("centerX", boundingBox.exactCenterX());
+                        elementData.put("centerY", boundingBox.exactCenterY());
+                        elementData.put("width", boundingBox.width());
+                        elementData.put("height", boundingBox.height());
+                        elementData.put("conf", element.getConfidence());
+                        elements.add(elementData);
+                    }
+                }
+            }
+        }
+        return elements;
     }
 
     private Rect createBoundingBox(Map<String, Object> boundingBoxData) {

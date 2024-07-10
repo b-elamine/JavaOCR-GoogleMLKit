@@ -65,6 +65,12 @@ public class PostProcessor {
         return combinedData;
     }
 
+    // TODO :
+    //  *** Conditions for more robust labels detection ***
+    //  if [SP95], then check under for [E10]
+    //  if [E10], then check above or right side for [SP95]
+    //  if [SUPER], then check under for [Ethanol]
+    //  if [SUPER Ethanol], check under for [E85]
     public static List<Map<String, Object>> filterAndExtractLabels(List<Map<String, Object>> combinedData) {
         List<Map<String, Object>> extractedLabels = new ArrayList<>();
         for (Map<String, Object> item : combinedData) {
@@ -129,7 +135,7 @@ public class PostProcessor {
                     corrected = String.format("%04d", Integer.parseInt(corrected));
                     //corrected = corrected.replaceAll("(\\d)(\\d{3})", "$1.$2");
                 }
-
+                System.out.println("PRICES WITHOUT MATCHING : " +corrected);
                 pricesData.put("text", corrected);
                 pricesData.put("bounding_box", element);
                 prices.add(pricesData);
