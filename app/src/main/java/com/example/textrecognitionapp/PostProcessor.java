@@ -1,5 +1,6 @@
 package com.example.textrecognitionapp;
 
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,21 +10,26 @@ public class PostProcessor {
 
     private static final String[] FUEL_TYPES = {
             "SP95E10",
+            "SUPERSP95E10",
             "SP95-E10",
+            "SUPERSP95-E10",
             "SP98",
             "SP95",
+            "SANSPLOMB95",
+            "SANSPLOMB98",
+            "SPLOMB98",
+            "SPLOMB95",
             "E85",
             "E10",
             "GAZOLE",
             "GASOIL",
+            "DIESEL",
             "GPL",
             "GPLC",
-            "Splomb98",
-            "Splomb95",
-            "SUPERETHANOL",
-            "SUPER",
             "ETHANOL",
-            "DIESEL"
+            "SUPERETHANOL",
+            "SUPERETHANOLE85",
+
     };
 
 
@@ -74,6 +80,7 @@ public class PostProcessor {
             combinedElement.put("width", right - left);
             combinedElement.put("height", bottom - top);
             combinedElement.put("conf", conf);
+            System.out.println("Combined " + combinedElement.get("text"));
             combinedData.add(combinedElement);
 
             i = j;
@@ -89,24 +96,48 @@ public class PostProcessor {
     //  if [E10], then check above or right side for [SP95]
     //  if [SUPER], then check under for [Ethanol]
     //  if [SUPER Ethanol], check under for [E85]
+
+
+
+
+    private static int LevenshteinThreshold(int length) {
+        if (length <= 2) {
+            return 1;
+        } else {
+            return 2;
+        }
+    }
+
     public static List<Map<String, Object>> filterAndExtractLabels(List<Map<String, Object>> combinedData) {
         List<Map<String, Object>> extractedLabels = new ArrayList<>();
+        LevenshteinDistance levenshtein = new LevenshteinDistance();
+
         for (Map<String, Object> item : combinedData) {
-            String text = ((String) item.get("text")).replace(" ", "").toUpperCase();
+            String originalText = (String) item.get("text"); // Original text before modification
+            String modifiedText = originalText.replace(" ", "").toUpperCase(); // Preprocessed text
+
+            // Variables to track the best match
+            String bestFuelType = null;
+            int minDistance = Integer.MAX_VALUE;
+
             for (String fuelType : FUEL_TYPES) {
-                if (text.equals(fuelType) || text.contains(fuelType)) {
-                    Map<String, Object> labelData = new HashMap<>();
-                    if (text.equals(fuelType)) {
-                        labelData.put("text", fuelType);
-                        labelData.put("bounding_box", item);
-                        extractedLabels.add(labelData);
-                    } else {
-                        labelData.put("text", fuelType);
-                        labelData.put("pPrice0", text.substring(0, (text.indexOf(fuelType))));
-                        labelData.put("pPrice1", text.substring((text.indexOf(fuelType)) + (fuelType.length()), text.length()));
-                        System.out.println("Potential Prices : " + labelData.get("pPrice0") + " | " + labelData.get("pPrice1") + " " + "For " + fuelType);
+                int distance = levenshtein.apply(modifiedText, fuelType);
+
+                if (distance <= LevenshteinThreshold(modifiedText.length()) && (bestFuelType == null || distance < minDistance)) {
+                    if (!modifiedText.equals("SANSPLOMB")) {
+                        bestFuelType = fuelType;
+                        minDistance = distance;
                     }
                 }
+            }
+
+            // Add the best match to extractedLabels
+            if (bestFuelType != null) {
+                System.out.println("Extracted Labels after Levenshtein : "+ bestFuelType);
+                Map<String, Object> labelData = new HashMap<>();
+                labelData.put("text", bestFuelType);
+                labelData.put("bounding_box", item);
+                extractedLabels.add(labelData);
             }
         }
         return extractedLabels;

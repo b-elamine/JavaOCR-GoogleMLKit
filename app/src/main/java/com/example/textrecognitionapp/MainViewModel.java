@@ -80,7 +80,7 @@ public class MainViewModel extends ViewModel {
 
             Map<String, Object> label = (Map<String, Object>) processedLabel.get("bounding_box");
             Rect labelBox = createBoundingBox(label);
-            String labelText = (String) label.get("text");
+            String labelText = (String) processedLabel.get("text");
 
             for (Map<String, Object> processedPrice : processedPrices) {
 
