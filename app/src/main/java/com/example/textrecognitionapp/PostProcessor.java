@@ -9,26 +9,38 @@ public class PostProcessor {
 
     private static final String[] FUEL_TYPES = {
             "SP95E10",
+            "SP95-E10",
             "SP98",
             "SP95",
             "E85",
             "E10",
             "GAZOLE",
+            "GASOIL",
             "GPL",
             "GPLC",
             "Splomb98",
             "Splomb95",
             "SUPERETHANOL",
             "SUPER",
-            "ETHANOL"
+            "ETHANOL",
+            "DIESEL"
     };
+
+
 
     public static List<Map<String, Object>> combineSplitWords(List<Map<String, Object>> elements) {
         List<Map<String, Object>> combinedData = new ArrayList<>();
         int n = elements.size();
 
+        // Test and Change tolerance values or dynamic for ex :
+        // HorizontalTolerance = heightCurrentElement/2
+        // TopTolerance = widthCurrentElement
+        final int TOP_TOLERANCE = 5;
+        final int HORIZONTAL_TOLERANCE = 20;
+
         for (int i = 0; i < n; ) {
             StringBuilder combinedText = new StringBuilder((String) elements.get(i).get("text"));
+
             int left = (int) elements.get(i).get("left");
             int top = (int) elements.get(i).get("top");
             int right = (int) elements.get(i).get("right");
@@ -36,14 +48,19 @@ public class PostProcessor {
             int width = (int) elements.get(i).get("width");
             int height = (int) elements.get(i).get("height");
             float conf = (float) elements.get(i).get("conf");
-
             int j = i + 1;
-            while (j < n && (int) elements.get(j).get("top") == top) {
-                combinedText.append(elements.get(j).get("text"));
-                right = (int) elements.get(j).get("left") + (int) elements.get(j).get("width");
-                bottom = Math.max(bottom, (int) elements.get(j).get("top") + (int) elements.get(j).get("height"));
-                conf = (float) ((float) elements.get(j).get("conf") + (float) elements.get(i).get("conf")) / 2;
-                j++;
+
+            while (j < n && Math.abs((int) elements.get(j).get("top") - top) <= TOP_TOLERANCE) {
+                int currentLeft = (int) elements.get(j).get("left");
+                if (currentLeft - right <= HORIZONTAL_TOLERANCE) {
+                    combinedText.append(elements.get(j).get("text"));
+                    right = currentLeft + (int) elements.get(j).get("width");
+                    bottom = Math.max(bottom, (int) elements.get(j).get("top") + (int) elements.get(j).get("height"));
+                    conf = (float) ((float) elements.get(j).get("conf") + (float) elements.get(i).get("conf")) / 2;
+                    j++;
+                } else {
+                    break;
+                }
             }
 
             Map<String, Object> combinedElement = new HashMap<>();
@@ -64,6 +81,7 @@ public class PostProcessor {
 
         return combinedData;
     }
+
 
     // TODO :
     //  *** Conditions for more robust labels detection ***

@@ -26,8 +26,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="15dp"
-            android:text="Hello!"
+            android:text="Price Recognition"
             android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="15sp"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
