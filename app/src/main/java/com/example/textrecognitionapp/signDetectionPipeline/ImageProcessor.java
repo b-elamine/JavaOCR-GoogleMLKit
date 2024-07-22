@@ -54,7 +54,23 @@ public class ImageProcessor {
 
         List<Detection> nmsDetections = applyNMS(detections, iouThreshold);
 
-        Bitmap mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+        if (nmsDetections.isEmpty()) {
+            return originalBitmap; // No detections, return original image
+        }
+
+        // Assuming we're interested in the first detection after NMS
+        Detection detection = nmsDetections.get(0);
+
+        int left = Math.max(0, (int) detection.x);
+        int top = Math.max(0, (int) detection.y);
+        int right = Math.min(originalWidth, (int) (detection.x + detection.width));
+        int bottom = Math.min(originalHeight, (int) (detection.y + detection.height));
+
+        // Crop the original bitmap to the bounding box of the detected object
+        Bitmap croppedBitmap = Bitmap.createBitmap(originalBitmap, left, top, right - left, bottom - top);
+
+        // Optionally draw the bounding box and label on the cropped image
+        Bitmap mutableBitmap = croppedBitmap.copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(mutableBitmap);
         Paint paint = new Paint();
         paint.setColor(Color.RED);
@@ -64,11 +80,9 @@ public class ImageProcessor {
         textPaint.setColor(Color.RED);
         textPaint.setTextSize(20);
 
-        for (Detection detection : nmsDetections) {
-            canvas.drawRect(detection.x, detection.y, detection.x + detection.width, detection.y + detection.height, paint);
-            String className = classNames.get(detection.classId);
-            canvas.drawText(className + ": " + String.format("%.2f", detection.confidence), detection.x, detection.y - 10, textPaint);
-        }
+        canvas.drawRect(0, 0, right - left, bottom - top, paint);
+        String className = classNames.get(detection.classId);
+        canvas.drawText(className + ": " + String.format("%.2f", detection.confidence), 10, 30, textPaint);
 
         return mutableBitmap;
     }
@@ -104,4 +118,5 @@ public class ImageProcessor {
 
         return 0;
     }
+
 }

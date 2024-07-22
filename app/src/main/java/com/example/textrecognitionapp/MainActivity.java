@@ -23,9 +23,13 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.textrecognitionapp.databinding.ActivityMainBinding;
+import com.example.textrecognitionapp.signDetectionPipeline.ImageProcessor;
+import com.example.textrecognitionapp.signDetectionPipeline.InferenceModel;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,6 +37,10 @@ public class MainActivity extends AppCompatActivity {
     private MainViewModel viewModel;
     private Uri detectImageUri;
     private Bitmap detectImage;
+    private List<String> classNames;
+    private ImageProcessor imageProcessor;
+    private InferenceModel yolo;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +48,14 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+
+        // Class names (only sign)
+        classNames = new ArrayList<>();
+        classNames.add("sign");
+
+        imageProcessor = new ImageProcessor();
+        yolo = new InferenceModel(this);
+
 
         binding.textViewResult.setMovementMethod(new ScrollingMovementMethod());
         binding.buttonCopy.bringToFront();
@@ -89,7 +105,11 @@ public class MainActivity extends AppCompatActivity {
             new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK) {
                     detectImage = (Bitmap) result.getData().getExtras().get("data");
-                    setRecognitionTextFromBitmap(detectImage);
+
+                    // Sign detection code :
+                    Bitmap signBitmap = signDetection(detectImage, 0.5f, 0.5f);
+
+                    setRecognitionTextFromBitmap(signBitmap);
                 }
             });
 
@@ -156,6 +176,25 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Permissions", permission + ": " + status);
             }
         }
+    }
+
+    private Bitmap loadImageFromAssets(String fileName) {
+        try {
+            InputStream inputStream = getAssets().open(fileName);
+            return BitmapFactory.decodeStream(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Bitmap signDetection (Bitmap inputImage, float confidenceThreshold, float iouThreshold) {
+
+        // Sign detection code :
+        float[][][][] inputTensor = imageProcessor.preprocessImage(inputImage);
+        float[][][] signResult = yolo.runInference(inputTensor);
+
+        return imageProcessor.processOutput(signResult, detectImage, classNames, confidenceThreshold, iouThreshold);
     }
 
     private static final int CAMERA_PERMISSION_CODE = 0;

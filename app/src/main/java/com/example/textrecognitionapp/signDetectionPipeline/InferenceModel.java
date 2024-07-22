@@ -42,7 +42,7 @@ public class InferenceModel {
         return  modelFile;
     }
 
-    public float[][][] runInference(float[][][] inputTensor) {
+    public float[][][] runInference(float[][][][] inputTensor) {
         try {
             OnnxTensor input = OnnxTensor.createTensor(env, inputTensor);
             OrtSession.Result result = session.run(Collections.singletonMap("images", input));
