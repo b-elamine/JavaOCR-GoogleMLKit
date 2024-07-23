@@ -1,8 +1,8 @@
 package com.example.textrecognitionapp;
 
-
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,13 +39,11 @@ public class ResultActivity extends AppCompatActivity {
 
     private Pair<Bitmap, String> getImageFromIntent() {
         Intent intent = getIntent();
-        Bitmap bitmap = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            bitmap = intent.getParcelableExtra("bitmapimage", Bitmap.class);
-        } else {
-            bitmap = intent.getParcelableExtra("bitmapimage");
+        byte[] byteArray = intent.getByteArrayExtra("image");
+        if (byteArray != null) {
+            Bitmap bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+            return new Pair<>(bitmap, null); // No URI provided
         }
-        String uri = intent.getStringExtra("uriimage");
-        return new Pair<>(bitmap, uri);
+        return new Pair<>(null, null); // No data provided
     }
 }

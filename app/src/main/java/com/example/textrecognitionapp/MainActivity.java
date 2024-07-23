@@ -8,16 +8,18 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -26,6 +28,7 @@ import com.example.textrecognitionapp.databinding.ActivityMainBinding;
 import com.example.textrecognitionapp.signDetectionPipeline.ImageProcessor;
 import com.example.textrecognitionapp.signDetectionPipeline.InferenceModel;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -40,14 +43,17 @@ public class MainActivity extends AppCompatActivity {
     private List<String> classNames;
     private ImageProcessor imageProcessor;
     private InferenceModel yolo;
-
+    private AppCompatImageView viewResultImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        viewResultImage = findViewById(R.id.ViewResultImage);
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+
+
 
         // Class names (only sign)
         classNames = new ArrayList<>();
@@ -55,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
 
         imageProcessor = new ImageProcessor();
         yolo = new InferenceModel(this);
-
 
         binding.textViewResult.setMovementMethod(new ScrollingMovementMethod());
         binding.buttonCopy.bringToFront();
@@ -70,18 +75,16 @@ public class MainActivity extends AppCompatActivity {
             if (detectImage != null) {
                 Toast.makeText(this, "Re Recognition Image!",
                         Toast.LENGTH_SHORT).show();
-                setRecognitionTextFromBitmap(detectImage);
+                Bitmap signBitmap = signDetection(detectImage, 0.5f, 0.5f);
+                setRecognitionTextFromBitmap(signBitmap);
+                viewResultImage.setImageBitmap(signBitmap != null ? signBitmap : detectImage);
             }
         });
         binding.buttonShowImage.setOnClickListener(view -> {
-            if (detectImage != null && detectImageUri != null) {
-                Intent intent = new Intent(this, ResultActivity.class);
-                intent.putExtra("uriimage", detectImageUri.toString());
-                startActivity(intent);
-            } else if (detectImage != null) {
-                Intent intent = new Intent(this, ResultActivity.class);
-                intent.putExtra("bitmapimage", detectImage);
-                startActivity(intent);
+            if (detectImage != null) {
+                Bitmap signBitmap = signDetection(detectImage, 0.5f, 0.5f);
+                // Show the detected image directly in the ImageView
+                viewResultImage.setImageBitmap(signBitmap != null ? signBitmap : detectImage);
             } else {
                 Toast.makeText(this, "No images have been selected!", Toast.LENGTH_SHORT).show();
             }
@@ -89,8 +92,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void controlCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
         } else {
             openCamera();
         }
@@ -106,15 +109,16 @@ public class MainActivity extends AppCompatActivity {
                 if (result.getResultCode() == RESULT_OK) {
                     detectImage = (Bitmap) result.getData().getExtras().get("data");
 
-                    // Sign detection code :
+                    // Sign detection code:
                     Bitmap signBitmap = signDetection(detectImage, 0.5f, 0.5f);
 
                     setRecognitionTextFromBitmap(signBitmap);
+                    viewResultImage.setImageBitmap(signBitmap != null ? signBitmap : detectImage);
                 }
             });
 
     private void controlGalleryPermission() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, GALLERY_PERMISSION_CODE);
         } else {
             openGallery();
@@ -134,7 +138,9 @@ public class MainActivity extends AppCompatActivity {
                         detectImageUri = uri;
                         try (InputStream inputStream = getContentResolver().openInputStream(detectImageUri)) {
                             detectImage = BitmapFactory.decodeStream(inputStream);
-                            setRecognitionTextFromBitmap(detectImage);
+                            Bitmap signBitmap = signDetection(detectImage, 0.5f, 0.5f);
+                            setRecognitionTextFromBitmap(signBitmap);
+                            viewResultImage.setImageBitmap(signBitmap != null ? signBitmap : detectImage);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -156,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
     private void setRecognitionTextFromBitmap(Bitmap bitmap) {
         new Thread(() -> viewModel.textRecognizer(this, binding.textViewResult, bitmap)).start();
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -189,12 +196,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public Bitmap signDetection (Bitmap inputImage, float confidenceThreshold, float iouThreshold) {
-
-        // Sign detection code :
+        // Sign detection code
         float[][][][] inputTensor = imageProcessor.preprocessImage(inputImage);
         float[][][] signResult = yolo.runInference(inputTensor);
-
-        return imageProcessor.processOutput(signResult, detectImage, classNames, confidenceThreshold, iouThreshold);
+        return imageProcessor.processOutput(signResult, inputImage, classNames, confidenceThreshold, iouThreshold);
     }
 
     private static final int CAMERA_PERMISSION_CODE = 0;

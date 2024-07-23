@@ -22,4 +22,16 @@ public class Detection {
     public RectF toRectF() {
         return new RectF(x, y, x + width, y + height);
     }
+
+    @Override
+    public String toString() {
+        return "Detection{" +
+                "x=" + x +
+                ", y=" + y +
+                ", width=" + width +
+                ", height=" + height +
+                ", confidence=" + confidence +
+                ", classId=" + classId +
+                '}';
+    }
 }

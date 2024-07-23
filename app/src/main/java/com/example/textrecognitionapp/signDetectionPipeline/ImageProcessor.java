@@ -1,16 +1,20 @@
 package com.example.textrecognitionapp.signDetectionPipeline;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.Environment;
+import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class ImageProcessor {
+
+    private static final String TAG = "ImageProcessor"; // Tag for logging
 
     public float[][][][] preprocessImage(Bitmap bitmap) {
         Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, true);
@@ -28,7 +32,7 @@ public class ImageProcessor {
 
     public Bitmap processOutput(float[][][] output, Bitmap originalBitmap, List<String> classNames, float confidenceThreshold, float iouThreshold) {
         int numDetections = output[0][0].length;
-        int classIdSign = 0; // Assuming the "sign" class has ID 0
+        int numClasses = output[0].length - 4;
         int probabilityStartIndex = 4;
 
         int originalWidth = originalBitmap.getWidth();
@@ -44,48 +48,44 @@ public class ImageProcessor {
             float width = output[0][2][i] * scaleX;
             float height = output[0][3][i] * scaleY;
 
-            int classId = classIdSign; // Only process the "sign" class
-            float classProb = output[0][probabilityStartIndex][i];
+            int classId = -1;
+            float maxClassProb = 0;
+            for (int j = probabilityStartIndex; j < probabilityStartIndex + numClasses; j++) {
+                float classProb = output[0][j][i];
+                if (classProb > maxClassProb) {
+                    maxClassProb = classProb;
+                    classId = j - probabilityStartIndex;
+                }
+            }
 
-            if (classProb > confidenceThreshold) {
-                detections.add(new Detection(centerX - width / 2, centerY - height / 2, width, height, classProb, classId));
+            if (maxClassProb > confidenceThreshold) {
+                detections.add(new Detection(centerX - width / 2, centerY - height / 2, width, height, maxClassProb, classId));
             }
         }
 
+        Log.d("Detection", "Total detections before NMS: " + detections.size());
         List<Detection> nmsDetections = applyNMS(detections, iouThreshold);
+        Log.d("Detection", "Total detections after NMS: " + nmsDetections.size());
 
-        if (nmsDetections.isEmpty()) {
-            return originalBitmap; // No detections, return original image
+        if (!nmsDetections.isEmpty()) {
+            Detection detection = nmsDetections.get(0);
+            Log.d("Detection", "NMS Detection: " + detection.toString());
+            float left = detection.x;
+            float top = detection.y;
+            float right = detection.x + detection.width;
+            float bottom = detection.y + detection.height;
+
+            int cropLeft = Math.max(0, Math.round(left));
+            int cropTop = Math.max(0, Math.round(top));
+            int cropWidth = Math.min(originalWidth, Math.round(right)) - cropLeft;
+            int cropHeight = Math.min(originalHeight, Math.round(bottom)) - cropTop;
+
+            return Bitmap.createBitmap(originalBitmap, cropLeft, cropTop, cropWidth, cropHeight);
         }
 
-        // Assuming we're interested in the first detection after NMS
-        Detection detection = nmsDetections.get(0);
-
-        int left = Math.max(0, (int) detection.x);
-        int top = Math.max(0, (int) detection.y);
-        int right = Math.min(originalWidth, (int) (detection.x + detection.width));
-        int bottom = Math.min(originalHeight, (int) (detection.y + detection.height));
-
-        // Crop the original bitmap to the bounding box of the detected object
-        Bitmap croppedBitmap = Bitmap.createBitmap(originalBitmap, left, top, right - left, bottom - top);
-
-        // Optionally draw the bounding box and label on the cropped image
-        Bitmap mutableBitmap = croppedBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(mutableBitmap);
-        Paint paint = new Paint();
-        paint.setColor(Color.RED);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2);
-        Paint textPaint = new Paint();
-        textPaint.setColor(Color.RED);
-        textPaint.setTextSize(20);
-
-        canvas.drawRect(0, 0, right - left, bottom - top, paint);
-        String className = classNames.get(detection.classId);
-        canvas.drawText(className + ": " + String.format("%.2f", detection.confidence), 10, 30, textPaint);
-
-        return mutableBitmap;
+        return originalBitmap; // Return original bitmap if no detections are found
     }
+
 
     private List<Detection> applyNMS(List<Detection> detections, float iouThreshold) {
         List<Detection> nmsDetections = new ArrayList<>();
@@ -100,6 +100,8 @@ public class ImageProcessor {
 
         return nmsDetections;
     }
+
+
 
     private float calculateIoU(Detection d1, Detection d2) {
         RectF rect1 = d1.toRectF();
@@ -117,6 +119,19 @@ public class ImageProcessor {
         }
 
         return 0;
+    }
+
+    private void saveCroppedImage(Bitmap bitmap) {
+        try {
+            File file = new File(Environment.getExternalStorageDirectory(), "cropped_image.jpg");
+            FileOutputStream out = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+            Log.d("ImageProcessor", "Cropped image saved to " + file.getAbsolutePath());
+        } catch (IOException e) {
+            Log.e("ImageProcessor", "Failed to save cropped image", e);
+        }
     }
 
 }

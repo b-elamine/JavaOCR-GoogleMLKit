@@ -44,13 +44,35 @@ public class InferenceModel {
 
     public float[][][] runInference(float[][][][] inputTensor) {
         try {
+            // Convert input tensor to ONNX tensor
             OnnxTensor input = OnnxTensor.createTensor(env, inputTensor);
+
+            // Run inference
             OrtSession.Result result = session.run(Collections.singletonMap("images", input));
-            float [][][] output = (float[][][]) result.get(0).getValue();
-            return  output;
+
+            // Retrieve the output
+            float[][][] output = (float[][][]) result.get(0).getValue();
+
+            // Debug output shape and values
+            if (output != null) {
+                System.out.println("Output shape: " + output.length + " x " + output[0].length + " x " + output[0][0].length);
+                // Print a few values for inspection (optional)
+                for (int i = 0; i < Math.min(output.length, 5); i++) {
+                    for (int j = 0; j < Math.min(output[i].length, 5); j++) {
+                        for (int k = 0; k < Math.min(output[i][j].length, 5); k++) {
+                            System.out.println("Output[" + i + "][" + j + "][" + k + "]: " + output[i][j][k]);
+                        }
+                    }
+                }
+            } else {
+                System.out.println("Output is null.");
+            }
+
+            return output;
         } catch (OrtException e) {
             e.printStackTrace();
             return null;
         }
     }
+
 }

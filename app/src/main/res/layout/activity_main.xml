@@ -24,12 +24,20 @@
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/textViewResult"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:padding="15dp"
             android:text="Price Recognition"
             android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="15sp"/>
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/ViewResultImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/buttonShowImage"
